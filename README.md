@@ -1,7 +1,6 @@
-# webpy REST exmaple
+# webpy REST jsondb exmaple
 
-REST example with json/xml/txt and html output. The output is controlled 
-by the http Accept request header.
+TBD
 
 ## install 
 	./bin/setup.sh

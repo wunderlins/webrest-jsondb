@@ -18,17 +18,18 @@ if the Accept header is missing, json is the default.
 
 """
 
-try:
-	import simplejson as json
-except ImportError:
-	import json
 import sys, os
 
 sys.path.insert(1, os.path.join(os.path.dirname(__file__), 'lib', 'web.py-0.37'))
 sys.path.insert(1, os.path.join(os.path.dirname(__file__), 'lib', 'python-mimeparse-1.5.1'))
 sys.path.insert(1, os.path.join(os.path.dirname(__file__), 'lib', 'mimerender-master', 'src'))
 sys.path.insert(1, os.path.join(os.path.dirname(__file__), 'lib', 'dicttoxml-1.6.6'))
+sys.path.insert(1, os.path.join(os.path.dirname(__file__), 'lib', 'jsondatabase-0.1.1'))
 
+try:
+	import simplejson as json
+except ImportError:
+	import json
 import pprint
 import mimerender
 import web
@@ -47,7 +48,6 @@ class wsgiapp(web.application):
 		return web.httpserver.runsimple(func, (ip, port))
 
 class renderer(object):
-	
 	@staticmethod
 	def dict2xml(d):
 		return parseString(dicttoxml.dicttoxml(d, \
