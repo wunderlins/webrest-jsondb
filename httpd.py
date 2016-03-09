@@ -41,7 +41,7 @@ mimerender = mimerender.WebPyMimeRender()
 
 urls = (
 	'/test',    'test',
-	'/db/(.*)', 'db'
+	'/db(.*)', 'db'
 )
 
 class wsgiapp(web.application):
@@ -116,6 +116,10 @@ class db:
 		# remove trailing slash
 		if location[-1:] == "/":
 			location = location[0:-1]
+		# remove beginning slash
+		if location and location[0] == "/":
+			location = location[1:]
+		
 		# split path
 		aloc = location.split("/")
 		
@@ -146,6 +150,8 @@ class db:
 		location, aloc = self._location(name)
 		db = self._getdb()
 		
+		#print "start"
+		#pprint.pprint(location)
 		# handle root node
 		if not location:
 			ret = {}
