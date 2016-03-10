@@ -97,18 +97,7 @@ class test:
 class NotFoundException(Exception):
 	pass
 
-class db:
-	render_xml  = lambda **args: renderer.dict2xml(args)
-	render_json = lambda **args: renderer.dict2json(args)
-	render_html = lambda **args: '<!DOCTYPE html>\n<html>\n<body>\n' + \
-	                             renderer.dict2html(args) + "\n</body>\n</html>"
-	render_txt  = lambda **args: renderer.dict2txt(args)
-	
-	@staticmethod
-	def _getdb():
-		from jsondb.db import Database
-		return Database("data.json")
-	
+class resthelper(object):
 	@staticmethod
 	def _location(location):
 		# sanitize path
@@ -122,11 +111,33 @@ class db:
 		
 		# split path
 		aloc = location.split("/")
+		if len(aloc) == 1 and aloc[0] == "":
+			aloc = []
 		
 		return (location, aloc)
 	
+class db(resthelper):
+	render_xml  = lambda **args: renderer.dict2xml(args)
+	render_json = lambda **args: renderer.dict2json(args)
+	render_html = lambda **args: '<!DOCTYPE html>\n<html>\n<body>\n' + \
+	                             renderer.dict2html(args) + "\n</body>\n</html>"
+	render_txt  = lambda **args: renderer.dict2txt(args)
+	
+	@staticmethod
+	def _getdb():
+		from jsondb.db import Database
+		return Database("data.json")
+	
 	@staticmethod
 	def _fetch(aloc, db):
+		
+		print "aloc " + str(aloc)
+		if len(aloc) == 0 or aloc == None:
+			ret = {}
+			for e in db:
+				ret[e] = db[e]
+			return ret
+
 		ret = db
 		try:
 			for e in aloc:
@@ -138,26 +149,67 @@ class db:
 			raise NotFoundException("Crikey!")
 		
 		return ret
-	
+
+	@mimerender(
+		default = 'xml',
+		json = render_json,
+		xml  = render_xml,
+		html = render_html,
+		txt  = render_txt
+	)
+	def POST(self, name):
+		location, aloc = self._location(name)
+		db = self._getdb()
+		postdata = web.input()
+		
+		#pprint.pprint((location, aloc))
+		#pprint.pprint(postdata)
+		
+		# TODO: validate input data
+		
+		# fetch root node
+		
+		ret    = None
+		parent = None
+		
+		#print location, aloc
+		
+		try:
+			ret = self._fetch(aloc, db)
+			print ret
+		except NotFoundException as e:
+			#details = e.args[0]
+			#raise web.notfound()
+			
+			# TODO: if not found, check if the parent is avialable, if so add it 
+			#       as child
+			parent_location = aloc[0:-1]
+			if parent_location == None:
+				parent_location = []
+			print "parent_location: " + parent_location
+			try:
+				print parent_location
+				parent = self._fetch(parent_location, db)
+			except NotFoundException as e:
+				raise web.notfound()
+			
+			pass
+		
+		# replace data
+		
+		# return success state
+		return {"data": ret, "parent": parent}
+		
 	@mimerender(
 		default = 'json',
 		json = render_json,
 		xml  = render_xml,
-		#html = render_html,
+		html = render_html,
 		txt  = render_txt
 	)
 	def GET(self, name):
 		location, aloc = self._location(name)
 		db = self._getdb()
-		
-		#print "start"
-		#pprint.pprint(location)
-		# handle root node
-		if not location:
-			ret = {}
-			for e in db:
-				ret[e] = db[e]
-			return ret
 		
 		# handle sub nodes
 		ret = None
@@ -169,21 +221,8 @@ class db:
 		
 		return {"data": ret}
 
-	@mimerender(
-		default = 'json',
-		json = render_json,
-		xml  = render_xml,
-		#html = render_html,
-		txt  = render_txt
-	)
-	def POST(self, location):
-		location, aloc = self._location(name)
-		db = self._getdb()
-		
-		pass
-
 if __name__ == "__main__":
-	web.config.debug = True
+	web.config.debug = False
 	app = wsgiapp(urls, globals())
 	app.run(port=8083)
 	
