@@ -131,7 +131,6 @@ class db(resthelper):
 	@staticmethod
 	def _fetch(aloc, db):
 		
-		print "aloc " + str(aloc)
 		if len(aloc) == 0 or aloc == None:
 			ret = {}
 			for e in db:
@@ -160,7 +159,9 @@ class db(resthelper):
 	def POST(self, name):
 		location, aloc = self._location(name)
 		db = self._getdb()
-		postdata = web.input()
+		post = web.data()
+		print post
+		data = json.loads(post)
 		
 		#pprint.pprint((location, aloc))
 		#pprint.pprint(postdata)
@@ -186,17 +187,24 @@ class db(resthelper):
 			parent_location = aloc[0:-1]
 			if parent_location == None:
 				parent_location = []
-			print "parent_location: " + parent_location
+			print "parent_location: " + str(parent_location)
 			try:
-				print parent_location
+				#print parent_location
 				parent = self._fetch(parent_location, db)
 			except NotFoundException as e:
 				raise web.notfound()
 			
-			pass
-		
-		# replace data
-		
+			
+		# add new item to parent
+		if ret == None and parent != None:
+			if type(parent) == list:
+				parent.append(data)
+			else:
+				parent[aloc[-1:]] = data
+			
+			print aloc[0:-1]
+			db[aloc[0:-1]] = parent
+			
 		# return success state
 		return {"data": ret, "parent": parent}
 		

@@ -31,4 +31,11 @@ if __name__ == "__main__":
 	db.data(dictionary=data)
 	"""
 	
+	db["user"].append({
+		"user_id": "007",
+		"user_name": "James Bond",
+		"is_moderator": False,
+	})
+	
+	
 	print db["user"][1]
