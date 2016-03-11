@@ -16,6 +16,8 @@ curl -XDELETE  -iH "Accept: text/xml" localhost:8082/a/b/c
 
 if the Accept header is missing, json is the default.
 
+
+2016, Simon Wunderlin
 """
 
 import sys, os
