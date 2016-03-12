@@ -1,12 +1,22 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-simple json file access with exclusive locking during write
+simple json file access with exclusive locking during write.
+
+Storing data will set an exclusive lock to the data file until data is 
+commited to disk. Make sure to take this into account on multi threaded 
+applications.
+
+Writing data is always write all, this implementation is not intended for 
+large database files.
+
+Check the main function for usage examples.
 
 Interface
 db = new jsonndb("file.json")
 
-data = db.get("a/b")
+data = db.get(None)  # fetch the root node
+data = db.get("a/b") # fetch data["a"]["b"]
   -> throw ExceptionNotFound if element does not exist
 
 db.set(jsondata)
@@ -34,18 +44,33 @@ class jsondb(object):
 	__dirty = False
 	__path  = None
 	
-	def __init__(self, path):
+	def __init__(self, path=""):
+		"""Open json file
+		
+		:param path: path to json file
+		:returns: None
+		"""
 		self.__path = path
 		f = open(path, 'rb')
 		self.__data = json.load(f)
 		f.close()
 	
-	def __cleanpath(self, path):
+	def __cleanpath(self, path=""):
+		"""Sanitize object path
+		
+		:param path: path to object
+		:returns: str
+		"""
 		if len(path) > 0 and path[-1] == "/":
 			path = path[0:-1]
 		return path		
 	
 	def exists(self, path):
+		"""Check if object exists
+		
+		:param path: path to object
+		:returns: Bool
+		"""
 		path = self.__cleanpath(path)
 	
 		# root node always exists
@@ -62,12 +87,16 @@ class jsondb(object):
 					return False
 			except AttributeError, e:
 				return False
-				
 			node = node[e]
 		
 		return True
 	
-	def get(self, path):
+	def get(self, path=""):
+		"""Fetch an object an all it's children
+		
+		:param path: path to object
+		:returns: dict
+		"""
 		path = self.__cleanpath(path)
 		
 		if not path:
@@ -86,13 +115,26 @@ class jsondb(object):
 		return node
 	
 	def is_dirty(self):
+		"""Check if there uncommited changes
+		
+		:returns: Bool
+		"""
 		return self.__dirty
 	
-	def set(self, data):
+	def set(self, data={}):
+		"""Set data, everything will be overwitten
+		
+		:param data: dict
+		:returns: None
+		"""
 		self.__dirty = True
 		self.__data = data
 		
 	def commit(self):
+		"""Commit changes to disk
+		
+		:returns: None
+		"""
 		if self.__dirty == False:
 			return
 		
@@ -102,6 +144,8 @@ class jsondb(object):
 		portalocker.lock(file, portalocker.LOCK_EX)
 		json.dump(self.__data, file)
 		file.close()
+		
+		self.__dirty == False:
 
 if __name__ == "__main__":
 	"""Testing """
