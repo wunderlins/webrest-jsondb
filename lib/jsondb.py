@@ -127,6 +127,10 @@ class jsondb(object):
 		:param data: dict
 		:returns: None
 		"""
+		
+		if type(data) != dict:
+			raise TypeError("Expected dict")
+		
 		self.__dirty = True
 		self.__data = data
 		
@@ -169,14 +173,28 @@ if __name__ == "__main__":
 	assert db.exists("a/b") == True
 	assert db.exists("a/e") == False
 	
-	assert db.get("/") == {"a": {"b": 1, "c": 2, "d": [1,2,3]}}
-	assert db.get("") == {"a": {"b": 1, "c": 2, "d": [1,2,3]}}
-	assert db.get("a/b") == 1
-	assert db.get("a") == {"b": 1, "c": 2, "d": [1,2,3]}
-	assert db.get("a/") == {"b": 1, "c": 2, "d": [1,2,3]}
+	try:
+		assert db.get("/") == {"a": {"b": 1, "c": 2, "d": [1,2,3]}}
+		assert db.get("") == {"a": {"b": 1, "c": 2, "d": [1,2,3]}}
+		assert db.get("a/b") == 1
+		assert db.get("a") == {"b": 1, "c": 2, "d": [1,2,3]}
+		assert db.get("a/") == {"b": 1, "c": 2, "d": [1,2,3]}
+	except ExceptionNotFound, e:
+		print e
+		sys.exit(1)
 	
-	assert db.set({"a": 12}) == None
-	assert db.get("") == {"a": 12}
+	try:
+		assert db.set({"a": 12}) == None
+	except TypeError, e:
+		print e
+		sys.exit(1)
+		
+	try:
+		assert db.get("") == {"a": 12}
+	except ExceptionNotFound, e:
+		print e
+		sys.exit(1)
+	
 	try:
 		assert db.commit() == None
 	except LockException, e:
