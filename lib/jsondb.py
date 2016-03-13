@@ -112,7 +112,7 @@ class jsondb(object):
 		for e in apath:
 			node = node[e]
 		
-		return node
+		return {"data": node, "path": path}
 	
 	def is_dirty(self):
 		"""Check if there uncommited changes
