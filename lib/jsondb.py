@@ -125,10 +125,11 @@ class jsondb(object):
 		"""Set data, everything will be overwitten
 		
 		:param data: dict
+		:param path: string element to set/replace
 		:returns: None
 		"""
 		
-		if type(data) != dict:
+		if type(data) != dict and path == "":
 			raise TypeError("Expected dict")
 		
 		# set root
@@ -152,15 +153,28 @@ class jsondb(object):
 			self.__dirty = True
 			return
 		
+		parent = None
+		lastkey = None
 		for e in apath:
+			lastkey = e
 			try:
 				node[e]
 			except KeyError, ex:
+				# FIXME: will fail on non existend intermediate nodes
+				parent = node
 				node[e] = data
 			
+			parent = node
 			node = node[e]
 		
-		node = data
+		if type(node) != int or type(node) == float or type(node) == str or \
+		   type(node) == unicode or type(node) == list:
+			parent[lastkey] = data
+		elif type(node) == dict:
+			node = data
+		else:
+			raise TypeError("Unhandled Datatype " + type(node))
+			
 		self.__dirty = True
 		
 	def commit(self):
@@ -226,17 +240,18 @@ if __name__ == "__main__":
 	
 	try:
 		assert db.set({"a": {"b": 1, "c": 2, "d": [1,2,3]}}) == None
+		assert db.set({"e": "eeeee"}, "x") == None
+		assert db.set({"x": "1", "xx": 2}, "a/e") == None
+		assert db.set(50, "x") == None
+		assert db.set(20, "a/d") == None
 	except TypeError, e:
 		print e
 		sys.exit(1)
-	
-	assert db.set({"e": "eeeee"}, "x") == None
-	assert db.set({"x": "1", "xx": 2}, "a/e") == None
-	#assert db.set(50, "x") == TypeError
-	#assert db.set(20, "a/d") == TypeError
 	
 	try:
 		assert db.commit() == None
 	except LockException, e:
 		print "failed to write to file, locked exclusively"
 	
+	print db.get("")
+
