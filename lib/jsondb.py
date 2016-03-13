@@ -37,6 +37,7 @@ sys.path.insert(1, os.path.join(os.path.dirname(__file__), 'portalocker-0.5.7'))
 from portalocker import *
 
 class ExceptionNotFound(Exception):
+	"""This exception is raised if an element is beeing access that does not exist """
 	pass
 
 class jsondb(object):
@@ -49,6 +50,7 @@ class jsondb(object):
 		
 		:param path: path to json file
 		:returns: None
+		:raise: IOError if file is not found
 		"""
 		self.__path = path
 		f = open(path, 'rb')
@@ -138,6 +140,7 @@ class jsondb(object):
 		:param data: dict
 		:param path: string, element to set/replace
 		:returns: None
+		:raise: TypeError if an unhandled type is set
 		"""
 		
 		if type(data) != dict and path == "":
@@ -192,6 +195,7 @@ class jsondb(object):
 		"""Commit changes to disk
 		
 		:returns: None
+		:raise: LockException, if file is locked
 		"""
 		if self.__dirty == False:
 			return
@@ -264,5 +268,9 @@ if __name__ == "__main__":
 	except LockException, e:
 		print "failed to write to file, locked exclusively"
 	
+	# print commit data
 	print db.get("")
+	
+	#destroy the object
+	del db
 
