@@ -121,7 +121,7 @@ class jsondb(object):
 		"""
 		return self.__dirty
 	
-	def set(self, data={}):
+	def set(self, data={}, path=""):
 		"""Set data, everything will be overwitten
 		
 		:param data: dict
@@ -131,8 +131,37 @@ class jsondb(object):
 		if type(data) != dict:
 			raise TypeError("Expected dict")
 		
+		# set root
+		if path == "":
+			self.__dirty = True
+			self.__data = data
+			return
+		
+		# handle path
+		path = self.__cleanpath(path)
+		node = self.__data
+		
+		if not self.exists(path[0:-1]):
+			raise ExceptionNotFound("Element "+path+" not found in " + self.__path)
+		
+		apath = path.split('/')
+		
+		# handle 
+		if len(apath) == 1:
+			self.__data[apath[0]] = data
+			self.__dirty = True
+			return
+		
+		for e in apath:
+			try:
+				node[e]
+			except KeyError, ex:
+				node[e] = data
+			
+			node = node[e]
+		
+		node = data
 		self.__dirty = True
-		self.__data = data
 		
 	def commit(self):
 		"""Commit changes to disk
@@ -149,7 +178,7 @@ class jsondb(object):
 		json.dump(self.__data, file)
 		file.close()
 		
-		self.__dirty == False:
+		self.__dirty == False
 
 if __name__ == "__main__":
 	"""Testing """
@@ -194,6 +223,17 @@ if __name__ == "__main__":
 	except ExceptionNotFound, e:
 		print e
 		sys.exit(1)
+	
+	try:
+		assert db.set({"a": {"b": 1, "c": 2, "d": [1,2,3]}}) == None
+	except TypeError, e:
+		print e
+		sys.exit(1)
+	
+	assert db.set({"e": "eeeee"}, "x") == None
+	assert db.set({"x": "1", "xx": 2}, "a/e") == None
+	#assert db.set(50, "x") == TypeError
+	#assert db.set(20, "a/d") == TypeError
 	
 	try:
 		assert db.commit() == None
