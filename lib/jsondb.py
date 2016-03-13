@@ -99,8 +99,8 @@ class jsondb(object):
 		"""
 		path = self.__cleanpath(path)
 		
-		if not path:
-			return self.__data
+		if not path or path == None:
+			return {"data": self.__data, "path": ""}
 		
 		if not self.exists(path):
 			raise ExceptionNotFound("Element "+path+" not found in " + self.__path)
@@ -217,11 +217,11 @@ if __name__ == "__main__":
 	assert db.exists("a/e") == False
 	
 	try:
-		assert db.get("/") == {"a": {"b": 1, "c": 2, "d": [1,2,3]}}
-		assert db.get("") == {"a": {"b": 1, "c": 2, "d": [1,2,3]}}
-		assert db.get("a/b") == 1
-		assert db.get("a") == {"b": 1, "c": 2, "d": [1,2,3]}
-		assert db.get("a/") == {"b": 1, "c": 2, "d": [1,2,3]}
+		assert db.get("/") == {"data": {"a": {"b": 1, "c": 2, "d": [1,2,3]}}, "path" : ""}
+		assert db.get("") == {"data": {"a": {"b": 1, "c": 2, "d": [1,2,3]}}, "path" : ""}
+		assert db.get("a/b") == {"data": 1, "path" : "a/b"}
+		assert db.get("a") == {"data": {"b": 1, "c": 2, "d": [1,2,3]}, "path" : "a"}
+		assert db.get("a/") == {"data": {"b": 1, "c": 2, "d": [1,2,3]}, "path" : "a"}
 	except ExceptionNotFound, e:
 		print e
 		sys.exit(1)
@@ -233,7 +233,7 @@ if __name__ == "__main__":
 		sys.exit(1)
 		
 	try:
-		assert db.get("") == {"a": 12}
+		assert db.get("") == {"data": {"a": 12}, "path": ""}
 	except ExceptionNotFound, e:
 		print e
 		sys.exit(1)
