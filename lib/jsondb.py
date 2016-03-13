@@ -129,10 +129,14 @@ class jsondb(object):
 		return self.__dirty
 	
 	def set(self, data={}, path=""):
-		"""Set data, everything will be overwitten
+		"""Set data
+		
+		New elements will be added if the last part of the path is not yet set. 
+		intermediate path elements will not be created. You must take care to 
+		create the intermediate elements yourself.
 		
 		:param data: dict
-		:param path: string element to set/replace
+		:param path: string, element to set/replace
 		:returns: None
 		"""
 		
