@@ -61,6 +61,9 @@ class jsondb(object):
 		:param path: path to object
 		:returns: str
 		"""
+		if path == None:
+			path = ""
+		
 		if len(path) > 0 and path[-1] == "/":
 			path = path[0:-1]
 		return path		
@@ -94,8 +97,12 @@ class jsondb(object):
 	def get(self, path=""):
 		"""Fetch an object an all it's children
 		
+		This method wil always return a dict with 2 main nodes: (dict) data 
+		containing the json data, and (string) "path" containing the cleaned 
+		up path.
+		
 		:param path: path to object
-		:returns: dict
+		:returns: dict, {"data": the_data_dict, "path": "resolved/path"}
 		"""
 		path = self.__cleanpath(path)
 		
@@ -218,7 +225,7 @@ if __name__ == "__main__":
 	
 	try:
 		assert db.get("/") == {"data": {"a": {"b": 1, "c": 2, "d": [1,2,3]}}, "path" : ""}
-		assert db.get("") == {"data": {"a": {"b": 1, "c": 2, "d": [1,2,3]}}, "path" : ""}
+		assert db.get(None) == {"data": {"a": {"b": 1, "c": 2, "d": [1,2,3]}}, "path" : ""}
 		assert db.get("a/b") == {"data": 1, "path" : "a/b"}
 		assert db.get("a") == {"data": {"b": 1, "c": 2, "d": [1,2,3]}, "path" : "a"}
 		assert db.get("a/") == {"data": {"b": 1, "c": 2, "d": [1,2,3]}, "path" : "a"}
