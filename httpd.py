@@ -27,7 +27,6 @@ sys.path.insert(1, os.path.join(os.path.dirname(__file__), 'lib', 'web.py-0.37')
 sys.path.insert(1, os.path.join(os.path.dirname(__file__), 'lib', 'python-mimeparse-1.5.1'))
 sys.path.insert(1, os.path.join(os.path.dirname(__file__), 'lib', 'mimerender-master', 'src'))
 sys.path.insert(1, os.path.join(os.path.dirname(__file__), 'lib', 'dicttoxml-1.6.6'))
-sys.path.insert(1, os.path.join(os.path.dirname(__file__), 'lib', 'jsondatabase-0.1.1'))
 
 try:
 	import simplejson as json
@@ -38,6 +37,7 @@ import mimerender
 import web
 import dicttoxml
 from xml.dom.minidom import parseString
+import jsondb
 
 mimerender = mimerender.WebPyMimeRender()
 
@@ -124,33 +124,8 @@ class db(resthelper):
 	render_html = lambda **args: '<!DOCTYPE html>\n<html>\n<body>\n' + \
 	                             renderer.dict2html(args) + "\n</body>\n</html>"
 	render_txt  = lambda **args: renderer.dict2txt(args)
+	dbfile = "data.json"
 	
-	@staticmethod
-	def _getdb():
-		from jsondb.db import Database
-		return Database("data.json")
-	
-	@staticmethod
-	def _fetch(aloc, db):
-		
-		if len(aloc) == 0 or aloc == None:
-			ret = {}
-			for e in db:
-				ret[e] = db[e]
-			return ret
-
-		ret = db
-		try:
-			for e in aloc:
-				if type(ret) == list:
-					ret = ret[int(e)]
-				else:
-					ret = ret[e]
-		except:
-			raise NotFoundException("Crikey!")
-		
-		return ret
-
 	@mimerender(
 		default = 'xml',
 		json = render_json,
@@ -160,55 +135,13 @@ class db(resthelper):
 	)
 	def POST(self, name):
 		location, aloc = self._location(name)
-		db = self._getdb()
-		post = web.data()
-		print post
-		data = json.loads(post)
-		
-		#pprint.pprint((location, aloc))
-		#pprint.pprint(postdata)
-		
-		# TODO: validate input data
-		
-		# fetch root node
-		
-		ret    = None
-		parent = None
-		
-		#print location, aloc
 		
 		try:
-			ret = self._fetch(aloc, db)
-			print ret
-		except NotFoundException as e:
-			#details = e.args[0]
-			#raise web.notfound()
-			
-			# TODO: if not found, check if the parent is avialable, if so add it 
-			#       as child
-			parent_location = aloc[0:-1]
-			if parent_location == None:
-				parent_location = []
-			print "parent_location: " + str(parent_location)
-			try:
-				#print parent_location
-				parent = self._fetch(parent_location, db)
-			except NotFoundException as e:
-				raise web.notfound()
-			
-			
-		# add new item to parent
-		if ret == None and parent != None:
-			if type(parent) == list:
-				parent.append(data)
-			else:
-				parent[aloc[-1:]] = data
-			
-			print aloc[0:-1]
-			db[aloc[0:-1]] = parent
-			
-		# return success state
-		return {"data": ret, "parent": parent}
+			db = jsondb.jsondb(self.dbfile)
+		except IOError, e:
+			web.internalerror()
+		
+		pass
 		
 	@mimerender(
 		default = 'json',
@@ -219,20 +152,21 @@ class db(resthelper):
 	)
 	def GET(self, name):
 		location, aloc = self._location(name)
-		db = self._getdb()
 		
-		# handle sub nodes
-		ret = None
 		try:
-			ret = self._fetch(aloc, db)
-		except NotFoundException as e:
-			details = e.args[0]
-			raise web.notfound()
+			db = jsondb.jsondb(self.dbfile)
+		except IOError, e:
+			web.internalerror()
 		
-		return {"data": ret}
-
+		try:
+			data = db.get(location)
+		except ExceptionNotFound, e:
+			web.notfound()
+		
+		return data
+		
 if __name__ == "__main__":
-	web.config.debug = False
+	web.config.debug = True
 	app = wsgiapp(urls, globals())
 	app.run(port=8083)
 	
