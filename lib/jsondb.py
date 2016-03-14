@@ -13,13 +13,13 @@ large database files.
 Check the main function for usage examples.
 
 Interface
-db = new jsonndb("file.json")
+db = jsonndb("file.json")
 
 data = db.get(None)  # fetch the root node
 data = db.get("a/b") # fetch data["a"]["b"]
   -> throw ExceptionNotFound if element does not exist
 
-db.set(jsondata)
+db.set(jsondata, path="")
 	-> this method will alway overwire all data
 
 db.commit()
