@@ -172,7 +172,6 @@ class jsondb(object):
 		node = self.__data
 		
 		apath = path.split('/')
-		print apath
 		if not self.exists(apath[0:-1]):
 			print apath[0:-1]
 			raise ExceptionNotFound("Element "+path+" not found in " + self.__path)
@@ -306,8 +305,8 @@ if __name__ == "__main__":
 	except LockException, e:
 		print "failed to write to file, locked exclusively"
 	
-	# print commit data
-	print db.get("")
+	# print commit data formatted (abusing json lib here for the pretty printing)
+	print json.dumps(db.get(""), indent=4)
 	
 	#destroy the object
 	del db
