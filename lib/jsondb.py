@@ -27,8 +27,6 @@ db.commit()
 	- store
 	- unlock
 
-TODO: might add a feature to traverse list elements
-
 2016, Simon Wunderlin
 """
 
@@ -73,10 +71,11 @@ class jsondb(object):
 	def exists(self, path):
 		"""Check if object exists
 		
-		:param path: path to object
+		:param path: string or list, path to object
 		:returns: Bool
 		"""
-		path = self.__cleanpath(path)
+		if type(path) != list:
+			path = self.__cleanpath(path)
 	
 		# root node always exists
 		if not path:
@@ -84,14 +83,28 @@ class jsondb(object):
 		
 		# loop over all parts in path
 		#print path
-		apath = path.split('/')
+		if type(path) != list:
+			apath = path.split('/')
+		else:
+			apath = path
+			path = '/'.join(path)
 		node = self.__data
 		for e in apath:
 			try:
-				if e not in node.keys():
+				if type(node) == list:
+					e = int(e)
+					try:
+						node[e]
+					except IndexError,ex:
+						return False
+				elif type(node) == dict:
+					if e not in node.keys():
+						return False
+				else:
 					return False
 			except AttributeError, e:
 				return False
+			
 			node = node[e]
 		
 		return True
@@ -119,6 +132,8 @@ class jsondb(object):
 		apath = path.split('/')
 		node = self.__data
 		for e in apath:
+			if type(node) == list:
+				e = int(e)
 			node = node[e]
 		
 		return {"data": node, "path": path}
@@ -156,10 +171,11 @@ class jsondb(object):
 		path = self.__cleanpath(path)
 		node = self.__data
 		
-		if not self.exists(path[0:-1]):
-			raise ExceptionNotFound("Element "+path+" not found in " + self.__path)
-		
 		apath = path.split('/')
+		print apath
+		if not self.exists(apath[0:-1]):
+			print apath[0:-1]
+			raise ExceptionNotFound("Element "+path+" not found in " + self.__path)
 		
 		# handle 
 		if len(apath) == 1:
@@ -170,24 +186,29 @@ class jsondb(object):
 		parent = None
 		lastkey = None
 		for e in apath:
+			if type(node) == list:
+				e = int(e)
 			lastkey = e
 			try:
-				node[e]
+				#print str(type(node)) + " " + str(e)
+				try:
+					node[e]
+				except TypeError, ex:
+					raise ExceptionNotFound("Element "+path+" not found in " + self.__path)
 			except KeyError, ex:
-				# FIXME: will fail on non existend intermediate nodes
 				parent = node
 				node[e] = data
 			
 			parent = node
 			node = node[e]
 		
-		if type(node) != int or type(node) == float or type(node) == str or \
+		if type(node) == int or type(node) == float or type(node) == str or \
 		   type(node) == unicode or type(node) == list:
 			parent[lastkey] = data
 		elif type(node) == dict:
 			node = data
 		else:
-			raise TypeError("Unhandled Datatype " + type(node))
+			raise TypeError("Unhandled Datatype " + str(node) +  " " +str(type(node)))
 			
 		self.__dirty = True
 		
@@ -226,11 +247,14 @@ if __name__ == "__main__":
 		print e
 		sys.exit(1)
 	
-	# check if an element exists
+	# check if an element exists, this method should not rais any exceptions
 	assert db.exists("") == True
 	assert db.exists("a/b") == True
 	assert db.exists("a/e") == False
+	assert db.exists("a/d/0") == True
+	assert db.exists("a/d/15") == False
 	
+	# try to fetch data, or a part of the data file
 	try:
 		assert db.get("/") == {"data": {"a": {"b": 1, "c": 2, "d": [1,2,3]}}, "path" : ""}
 		assert db.get(None) == {"data": {"a": {"b": 1, "c": 2, "d": [1,2,3]}}, "path" : ""}
@@ -240,6 +264,9 @@ if __name__ == "__main__":
 	except ExceptionNotFound, e:
 		print e
 		sys.exit(1)
+	
+	# access a list element
+	assert db.get("a/d/0") == {"data": 1, "path" : "a/d/0"}
 	
 	try:
 		assert db.set({"a": 12}) == None
@@ -262,6 +289,17 @@ if __name__ == "__main__":
 	except TypeError, e:
 		print e
 		sys.exit(1)
+	
+	try:
+		assert db.set(100, "a/d/0") == None
+	except ExceptionNotFound, e:
+		pass
+
+	assert db.set([1,2,3], "a/d") == None
+	assert db.get("a/d/0") == {"data": 1, "path" : "a/d/0"}
+
+	assert db.set([{"a": 1},{"b": 2},{"c": 3}], "a/listofdicts") == None
+
 	
 	try:
 		assert db.commit() == None
