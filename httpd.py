@@ -74,7 +74,7 @@ class renderer(object):
 			# handle lists
 			if type(e) is list: # or type(d[e]) is list:
 				for el in e:
-					buffer += "<tr><td>" + str(el) + "</td><td>"
+					buffer += "<tr><td>" + str(el) + "</td></tr>"
 				buffer += '</tbody></table>'
 				return buffer
 					
@@ -86,7 +86,7 @@ class renderer(object):
 				buffer += renderer.dict2html(d[e])
 			else:
 				buffer += str(d[e])
-			#buffer += "</td></tr>"
+			buffer += "</td></tr>"
 		buffer += '</tbody></table>'
 	
 		return buffer
@@ -139,7 +139,7 @@ class db(resthelper):
 		try:
 			db = jsondb.jsondb(self.dbfile)
 		except IOError, e:
-			web.internalerror()
+			raise web.internalerror()
 		
 		pass
 		
@@ -152,17 +152,20 @@ class db(resthelper):
 	)
 	def GET(self, name):
 		location, aloc = self._location(name)
+		db = None
 		
 		try:
 			db = jsondb.jsondb(self.dbfile)
 		except IOError, e:
-			web.internalerror()
+			raise web.internalerror()
 		
 		try:
 			data = db.get(location)
-		except ExceptionNotFound, e:
-			web.notfound()
-		
+		except jsondb.ExceptionNotFound, e:
+			raise web.notfound()
+		except:
+			raise web.internalerror()
+
 		return data
 		
 if __name__ == "__main__":
